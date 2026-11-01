@@ -201,7 +201,7 @@
     return true;
   };
 
-  export const scrollAfterNavigate = async () => {
+  export const scrollAfterNavigate = async ({ restoreScrollTop = false } = {}) => {
     if (timelineManager.viewportHeight === 0 || timelineManager.viewportWidth === 0) {
       // this can happen if you do the following navigation order
       // /photos?at=<id>, /photos/<id>, https://example.com, browser back, browser back
@@ -216,7 +216,7 @@
     if (scrolled && scrollTarget) {
       await tick();
       focusAsset(scrollTarget);
-    } else if (scrollTarget) {
+    } else if (scrollTarget || restoreScrollTop) {
       timelineManager.scrollTo(lastVisibleScrollTop);
     } else {
       timelineManager.scrollTo(0);
@@ -247,8 +247,10 @@
 
   // afterNavigate is only called after navigation to a new URL, {complete} will resolve
   // after successful navigation.
-  afterNavigate(({ complete, shallow, type }) => {
+  afterNavigate(({ complete, from, shallow, type }) => {
     if (shallow && type === 'goto') return;
+
+    const isHistoryNavigationFromAssetViewer = type === 'popstate' && isAssetViewerRoute(from);
 
     void complete.finally(() => {
       const isAssetViewerPage = isAssetViewerRoute(page);
@@ -260,7 +262,7 @@
         initialLoadWasAssetViewer = isAssetViewerPage && !hasNavigatedToOrFromAssetViewer;
       }
 
-      void scrollAfterNavigate();
+      void scrollAfterNavigate({ restoreScrollTop: isHistoryNavigationFromAssetViewer });
     });
   });
 

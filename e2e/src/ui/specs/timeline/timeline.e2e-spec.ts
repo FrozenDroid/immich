@@ -100,6 +100,23 @@ test.describe('Timeline', () => {
       const scrollTopAfter = await timelineUtils.getScrollTop(page);
       expect(scrollTopAfter).toBe(scrollTopBefore);
     });
+    test('Open /photos, scroll, open asset-viewer, browser back', async ({ page }) => {
+      await pageUtils.openPhotosPage(page);
+      await thumbnailUtils.withAssetId(page, assets[0].id).focus();
+      for (let i = 1; i <= 20; i++) {
+        await page.keyboard.press('ArrowRight');
+        await assetViewerUtils.expectActiveAssetToBe(page, assets[i].id);
+      }
+      const scrollTopBefore = await timelineUtils.getScrollTop(page);
+
+      await thumbnailUtils.clickAssetId(page, assets[20].id);
+      await assetViewerUtils.waitForViewerLoad(page, assets[20]);
+      await page.goBack();
+      await page.waitForURL('**/photos');
+
+      const scrollTopAfter = await timelineUtils.getScrollTop(page);
+      expect(scrollTopAfter).toBe(scrollTopBefore);
+    });
     test('Open /photos, open asset-viewer, next photo, browser back, back', async ({ page }) => {
       const rng = new SeededRandom(49);
       const asset = selectRandom(assets, rng);
